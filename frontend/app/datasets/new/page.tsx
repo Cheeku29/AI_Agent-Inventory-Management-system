@@ -2,8 +2,11 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Boxes, Store, Warehouse, Building2, ShoppingBag, ArrowRight, Sparkles } from "lucide-react";
+import { Store, Warehouse, Building2, ShoppingBag, ArrowRight, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 const FACILITY_TYPES = [
   { id: "dark_store", name: "Dark Store", desc: "Quick-commerce 10-20 min fulfillment hubs", icon: Store },
@@ -15,7 +18,7 @@ const FACILITY_TYPES = [
 export default function NewDatasetPage() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState("dark_store");
-  const [name, setName] = useState("Downtown Dark Store #04");
+  const [name, setName] = useState("Downtown Dark Store #05");
   const [description, setDescription] = useState("Quick-commerce dark store operations");
   const [loading, setLoading] = useState(false);
 
@@ -34,23 +37,19 @@ export default function NewDatasetPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <div className="mb-8">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-950/60 border border-indigo-700/40 text-xs font-semibold text-indigo-400 mb-3">
-          <Sparkles className="h-3.5 w-3.5" />
-          Onboarding
-        </div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">
-          What are you managing?
-        </h1>
-        <p className="text-sm text-gray-400 mt-1">
-          Configure your facility profile and initialize an isolated dataset workspace.
-        </p>
-      </div>
+    <div className="max-w-2xl mx-auto space-y-6 py-4">
+      <PageHeader
+        title="Connect New Facility Dataset"
+        description="Select your inventory facility type and assign a unique workspace name."
+        breadcrumbs={[
+          { label: "Data Sources", href: "/datasets" },
+          { label: "New Facility" },
+        ]}
+      />
 
-      <form onSubmit={handleCreate} className="space-y-8">
+      <form onSubmit={handleCreate} className="space-y-6">
         {/* Facility Types Selection */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {FACILITY_TYPES.map((f) => {
             const Icon = f.icon;
             const isSelected = selectedType === f.id;
@@ -58,21 +57,23 @@ export default function NewDatasetPage() {
               <div
                 key={f.id}
                 onClick={() => setSelectedType(f.id)}
-                className={`cursor-pointer p-5 rounded-xl border transition ${
+                className={`cursor-pointer p-4 rounded-xl border transition-all ${
                   isSelected
-                    ? "bg-indigo-950/40 border-indigo-500 ring-1 ring-indigo-500/50"
-                    : "bg-gray-900/60 border-gray-800 hover:border-gray-700"
+                    ? "bg-blue-50/40 border-blue-600 ring-1 ring-blue-600"
+                    : "bg-white border-slate-200 hover:border-slate-300"
                 }`}
               >
-                <div className="flex items-center gap-3.5">
-                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                    isSelected ? "bg-indigo-600 text-white" : "bg-gray-800 text-gray-400"
-                  }`}>
-                    <Icon className="h-5 w-5" />
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`h-9 w-9 rounded-lg flex items-center justify-center ${
+                      isSelected ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
                   </div>
                   <div>
-                    <div className="font-semibold text-white text-base">{f.name}</div>
-                    <div className="text-xs text-gray-400 mt-0.5">{f.desc}</div>
+                    <div className="font-semibold text-slate-900 text-sm">{f.name}</div>
+                    <div className="text-[11px] text-slate-500">{f.desc}</div>
                   </div>
                 </div>
               </div>
@@ -80,44 +81,51 @@ export default function NewDatasetPage() {
           })}
         </div>
 
-        {/* Dataset Details */}
-        <div className="glass-panel p-6 border border-gray-800 space-y-4">
+        {/* Details Form */}
+        <Card className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-              Dataset / Facility Name
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Facility / Dataset Name
             </label>
             <input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg bg-gray-950 border border-gray-700 text-sm text-white focus:outline-none focus:border-indigo-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
-              Description (Optional)
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Facility Description (Optional)
             </label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg bg-gray-950 border border-gray-700 text-sm text-white focus:outline-none focus:border-indigo-500"
+              className="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
-        </div>
+        </Card>
 
-        {/* Action Button */}
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition transform hover:-translate-y-0.5"
+        {/* Actions */}
+        <div className="flex justify-end gap-2.5">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => router.push("/datasets")}
           >
-            <span>Proceed to Data Upload</span>
-            <ArrowRight className="h-4 w-4" />
-          </button>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            isLoading={loading}
+            rightIcon={<ArrowRight className="h-4 w-4" />}
+          >
+            Proceed to Data Upload
+          </Button>
         </div>
       </form>
     </div>

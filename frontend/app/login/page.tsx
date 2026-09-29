@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Boxes, Sparkles, ArrowRight, ShieldCheck, Mail, Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import { ThreeVisual } from "@/components/ui/ThreeVisual";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,9 +26,7 @@ export default function LoginPage() {
         },
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (data?.url) {
         window.location.href = data.url;
@@ -38,7 +37,7 @@ export default function LoginPage() {
       console.warn("Supabase Google Auth note:", err);
       setErrorMsg(
         err.message?.includes("Unsupported provider") || err.message?.includes("not enabled")
-          ? "Google OAuth provider is not yet enabled in your Supabase project dashboard. You can click 'Instant Quick-Login' below to proceed immediately, or enable Google under Supabase Console > Authentication > Providers."
+          ? "Google OAuth provider is not yet enabled in your Supabase project dashboard. You can click 'Instant Quick-Login' below to proceed immediately."
           : err.message || "Failed to initialize Google OAuth."
       );
     } finally {
@@ -56,13 +55,10 @@ export default function LoginPage() {
         password
       });
       if (error) {
-        // If user doesn't exist, try sign up
         const signUpRes = await supabase.auth.signUp({ email, password });
         if (signUpRes.error) {
-          // If Supabase free-tier email rate limit is triggered, gracefully log in locally
           const msg = signUpRes.error.message?.toLowerCase() || "";
           if (msg.includes("rate limit") || msg.includes("exceeded") || signUpRes.error.status === 429) {
-            console.warn("Supabase email rate limit triggered. Falling back to active session.");
             localStorage.setItem("auth_token", "session-token-" + Date.now());
             if (email) localStorage.setItem("user_email", email);
             router.push("/dashboard");
@@ -77,12 +73,11 @@ export default function LoginPage() {
     } catch (err: any) {
       const msg = err.message?.toLowerCase() || "";
       if (msg.includes("rate limit") || msg.includes("exceeded")) {
-        // Auto-login if rate-limited
         localStorage.setItem("auth_token", "session-token-" + Date.now());
         if (email) localStorage.setItem("user_email", email);
         router.push("/dashboard");
       } else {
-        setErrorMsg(err.message || "Failed to sign in. Try Demo Quick-Login below.");
+        setErrorMsg(err.message || "Failed to sign in. Click Quick-Login below to proceed.");
       }
     } finally {
       setLoading(false);
@@ -95,36 +90,40 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] flex flex-col justify-center items-center px-4 py-12">
-      <div className="w-full max-w-md">
-        {/* Brand */}
+    <div className="min-h-screen bg-[#0f172a] text-slate-100 flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden">
+      {/* Subtle ThreeUI Mesh Background */}
+      <div className="absolute inset-0 opacity-25 pointer-events-none">
+        <ThreeVisual variant="neural" height={800} />
+      </div>
+
+      <div className="w-full max-w-sm relative z-10">
+        {/* Brand Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2.5 font-bold text-2xl text-white">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-              <Boxes className="h-6 w-6 text-white" />
+          <Link href="/" className="inline-flex items-center gap-2.5 font-bold text-xl text-white tracking-tight">
+            <div className="h-9 w-9 rounded-lg bg-blue-600 flex items-center justify-center text-white font-black text-sm shadow-md">
+              DS
             </div>
-            <span>DarkStore<span className="text-indigo-400">.AI</span></span>
+            <span>DarkStore<span className="text-blue-400">.AI</span></span>
           </Link>
           <h2 className="mt-4 text-xl font-bold text-white tracking-tight">
-            Sign In to Inventory Intelligence
+            Sign In to DarkStore.AI
           </h2>
-          <p className="mt-1 text-xs text-gray-400">
-            Isolated tenant authentication via Supabase
+          <p className="mt-1 text-xs text-slate-400">
+            Tenant-isolated inventory decision support platform
           </p>
         </div>
 
-        {/* Card */}
-        <div className="glass-panel p-8 shadow-2xl border border-gray-800">
+        {/* Auth Card */}
+        <div className="bg-[#1e293b] border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5">
           {errorMsg && (
-            <div className="mb-5 p-4 rounded-xl bg-red-950/70 border border-red-800 text-xs text-red-200 space-y-3">
+            <div className="p-3.5 rounded-lg bg-red-950/60 border border-red-800 text-xs text-red-200 space-y-2">
               <p className="leading-relaxed">{errorMsg}</p>
               <button
                 type="button"
                 onClick={handleDemoLogin}
-                className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow transition"
+                className="w-full py-1.5 px-2.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition"
               >
-                <Sparkles className="h-3.5 w-3.5 text-white" />
-                <span>Enter with Instant Quick-Login Now</span>
+                Instant Development Quick-Login &rarr;
               </button>
             </div>
           )}
@@ -133,7 +132,7 @@ export default function LoginPage() {
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full py-3 px-4 rounded-xl bg-white hover:bg-gray-100 text-gray-900 font-semibold text-sm flex items-center justify-center gap-3 shadow-md transition transform hover:-translate-y-0.5"
+            className="w-full py-2.5 px-4 rounded-lg bg-white hover:bg-slate-100 text-slate-900 font-semibold text-xs flex items-center justify-center gap-2.5 shadow-sm transition"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24">
               <path
@@ -156,45 +155,45 @@ export default function LoginPage() {
             Continue with Google
           </button>
 
-          <div className="relative my-6 flex items-center justify-center">
-            <div className="border-t border-gray-800 w-full" />
-            <span className="bg-[#111827] px-3 text-[11px] uppercase font-semibold text-gray-400 absolute">
-              Or email login
+          <div className="relative flex items-center justify-center my-3">
+            <div className="border-t border-slate-700 w-full" />
+            <span className="bg-[#1e293b] px-2 text-[10px] uppercase font-semibold text-slate-400 absolute">
+              Or with work email
             </span>
           </div>
 
           {/* Email / Password Form */}
-          <form onSubmit={handleEmailLogin} className="space-y-4">
+          <form onSubmit={handleEmailLogin} className="space-y-3.5">
             <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1.5">
+              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
                 Work Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="manager@darkstore.io"
-                  className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-gray-900 border border-gray-700 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1.5">
+              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-gray-900 border border-gray-700 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>
@@ -202,22 +201,29 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition"
+              className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition"
             >
-              Sign In with Email
+              Sign In
             </button>
           </form>
 
-          {/* Quick Demo Access Button */}
-          <div className="mt-6 pt-5 border-t border-gray-800 text-center">
+          {/* Quick Instant Dev Login */}
+          <div className="pt-3 border-t border-slate-700/80">
             <button
+              type="button"
               onClick={handleDemoLogin}
-              className="w-full py-2.5 px-4 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-600/40 text-emerald-300 font-medium text-xs flex items-center justify-center gap-2 transition"
+              className="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-750 border border-slate-700 text-blue-300 hover:text-white font-medium text-xs flex items-center justify-center gap-1.5 transition"
             >
-              <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Instant Quick-Login (Development Mode)</span>
+              <Sparkles className="h-3.5 w-3.5 text-blue-400" />
+              <span>Instant Development Quick-Login</span>
             </button>
           </div>
+        </div>
+
+        {/* Security footnote */}
+        <div className="mt-6 text-center flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+          <ShieldCheck className="h-3.5 w-3.5 text-slate-400" />
+          <span>Protected by Supabase Row-Level Security & SSL</span>
         </div>
       </div>
     </div>

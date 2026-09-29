@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
+import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
   title: "DarkStore.AI — AI Inventory Decision Engine",
@@ -13,10 +13,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-[#090d16] text-gray-100 min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1 flex flex-col">{children}</main>
+    <html lang="en">
+      <body className="bg-slate-50 text-slate-900 min-h-screen">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

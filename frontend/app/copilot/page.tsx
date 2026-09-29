@@ -5,17 +5,18 @@ import {
   Bot, 
   Send, 
   Sparkles, 
-  Cpu, 
-  Boxes, 
-  ShoppingCart, 
-  ShieldAlert, 
   CheckCircle2, 
-  Terminal,
-  ChevronDown,
-  ChevronRight,
-  Database
+  ChevronDown, 
+  Database,
+  Loader2,
+  HelpCircle,
+  Cpu
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 
 export default function CopilotPage() {
   const [datasets, setDatasets] = useState<any[]>([]);
@@ -23,7 +24,7 @@ export default function CopilotPage() {
   const [messages, setMessages] = useState<any[]>([
     {
       role: "assistant",
-      content: "Hello! I am your AI Inventory Copilot. I analyze real-time replenishment needs, stockout risks, catalog product availability, and inventory anomalies using deterministic ML and optimization tools.\n\nAsk me anything like:\n• **\"Is Pepsi in stock or not?\"**\n• **\"How many items are out of stock?\"**\n• **\"What should I order today?\"**",
+      content: "Hello! I am your AI Inventory Decision Copilot. I analyze on-hand stock levels, 24h demand forecasts, Poisson safety buffers, and vendor lead times.\n\nTry asking:\n• **\"Is Pepsi in stock or not?\"**\n• **\"How many items are out of stock?\"**\n• **\"What should I order today?\"**",
       tool_calls: []
     }
   ]);
@@ -32,7 +33,6 @@ export default function CopilotPage() {
   const [suggestedPrompts, setSuggestedPrompts] = useState<string[]>([
     "Is Pepsi in stock or not?",
     "How many items are out of stock?",
-    "Is Coke available?",
     "What products should I order today?",
     "Show me products with critical stockout risk"
   ]);
@@ -40,11 +40,11 @@ export default function CopilotPage() {
 
   useEffect(() => {
     api.getDatasets().then((list) => {
-      setDatasets(list);
+      setDatasets(list || []);
       const storedId = localStorage.getItem("active_dataset_id");
       if (storedId && list.some((d: any) => d.id === storedId)) {
         setActiveDatasetId(storedId);
-      } else if (list.length > 0) {
+      } else if (list && list.length > 0) {
         setActiveDatasetId(list[0].id);
         localStorage.setItem("active_dataset_id", list[0].id);
       }
@@ -58,7 +58,7 @@ export default function CopilotPage() {
       ...prev,
       {
         role: "assistant",
-        content: `Switched active store context to **${datasets.find(d => d.id === newId)?.name || newId}**. Ready for inventory queries.`,
+        content: `Switched store context to **${datasets.find(d => d.id === newId)?.name || newId}**. Ready for live inventory queries.`,
         tool_calls: []
       }
     ]);
@@ -78,7 +78,7 @@ export default function CopilotPage() {
         { role: "user", content: q },
         {
           role: "assistant",
-          content: "Please select or upload a dataset first so I can inspect live store inventory data.",
+          content: "Please select or connect a dataset first to enable live inventory reasoning.",
           tool_calls: []
         }
       ]);
@@ -109,7 +109,7 @@ export default function CopilotPage() {
         ...prev,
         {
           role: "assistant",
-          content: "Sorry, I encountered an error communicating with the analytical decision engine: " + (err.message || "Unknown error"),
+          content: "Sorry, an analytical error occurred: " + (err.message || "Unknown error"),
           tool_calls: []
         }
       ]);
@@ -119,96 +119,80 @@ export default function CopilotPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8 w-full flex-1 flex flex-col justify-between">
-      {/* Copilot Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-gray-800 gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-            <Bot className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-white flex items-center gap-2">
-              AI Inventory Intelligence Copilot
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-950 text-indigo-400 border border-indigo-700/50">
-                Live Store Intelligence
-              </span>
-            </h1>
-            <p className="text-xs text-gray-400">
-              Natural language inventory assistant verified against live stock levels, demand, and suppliers
-            </p>
-          </div>
-        </div>
+    <div className="max-w-4xl mx-auto flex flex-col h-[calc(100vh-8rem)]">
+      {/* Header */}
+      <PageHeader
+        title="AI Inventory Copilot"
+        description="Deterministic natural language assistant verified against live stock levels, demand models, and supplier lead times."
+        badge={<Badge variant="info">Live LLM Agent</Badge>}
+        actions={
+          datasets.length > 0 && (
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs">
+              <Database className="h-3.5 w-3.5 text-blue-600" />
+              <select
+                value={activeDatasetId}
+                onChange={(e) => handleDatasetChange(e.target.value)}
+                className="bg-transparent text-xs text-slate-700 font-medium outline-none cursor-pointer"
+              >
+                {datasets.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )
+        }
+      />
 
-        {/* Dataset selector */}
-        {datasets.length > 0 && (
-          <div className="flex items-center gap-2 bg-gray-900 border border-gray-800 rounded-lg px-3 py-1.5 self-start sm:self-auto">
-            <Database className="h-4 w-4 text-indigo-400 shrink-0" />
-            <select
-              value={activeDatasetId}
-              onChange={(e) => handleDatasetChange(e.target.value)}
-              className="bg-transparent text-xs text-gray-200 outline-none cursor-pointer pr-2 font-medium"
-            >
-              {datasets.map((d) => (
-                <option key={d.id} value={d.id} className="bg-gray-900 text-gray-200">
-                  {d.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
-
-      {/* Messages Stream */}
-      <div className="flex-1 my-6 space-y-5 overflow-y-auto max-h-[58vh] pr-2">
+      {/* Message Stream */}
+      <div className="flex-1 overflow-y-auto space-y-4 pr-1 mb-4">
         {messages.map((m, idx) => {
           const isUser = m.role === "user";
           return (
             <div
               key={idx}
-              className={`flex gap-3.5 ${isUser ? "justify-end" : "justify-start"}`}
+              className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}
             >
               {!isUser && (
-                <div className="h-8 w-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center shrink-0">
+                <div className="h-8 w-8 rounded-lg bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
                   <Bot className="h-4 w-4" />
                 </div>
               )}
 
               <div
-                className={`max-w-2xl rounded-2xl p-4 text-sm leading-relaxed ${
+                className={`max-w-2xl rounded-xl p-4 text-xs leading-relaxed ${
                   isUser
-                    ? "bg-indigo-600 text-white rounded-br-sm shadow-md"
-                    : "glass-panel border border-gray-800 text-gray-200 rounded-bl-sm"
+                    ? "bg-slate-900 text-white rounded-tr-none shadow-sm"
+                    : "bg-white border border-slate-200 text-slate-800 rounded-tl-none shadow-card"
                 }`}
               >
-                {/* Markdown text output */}
                 <div className="whitespace-pre-wrap">{m.content}</div>
 
-                {/* Friendly Verification Sources (Collapsible) */}
+                {/* Collapsible Verification Steps */}
                 {m.tool_calls && m.tool_calls.length > 0 && (
-                  <details className="mt-3.5 pt-2.5 border-t border-gray-800/80 group">
-                    <summary className="text-[11px] text-gray-400 hover:text-gray-200 cursor-pointer flex items-center gap-1.5 select-none font-medium transition">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                      <span>Verified against live inventory engine ({m.tool_calls.length} check{m.tool_calls.length > 1 ? "s" : ""} performed)</span>
-                      <ChevronDown className="h-3 w-3 text-gray-500 group-open:rotate-180 transition-transform ml-auto" />
+                  <details className="mt-3 pt-2 border-t border-slate-100 group">
+                    <summary className="text-[11px] text-slate-500 hover:text-slate-800 cursor-pointer flex items-center gap-1.5 font-medium select-none">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                      <span>Verified against DuckDB ({m.tool_calls.length} analytical checks)</span>
+                      <ChevronDown className="h-3 w-3 text-slate-400 group-open:rotate-180 transition-transform ml-auto" />
                     </summary>
-                    <div className="mt-2.5 space-y-1.5 pl-3 border-l-2 border-emerald-500/30 text-xs text-gray-300">
+                    <div className="mt-2 space-y-1 pl-3 border-l-2 border-emerald-400 text-[11px] text-slate-600">
                       {m.tool_calls.map((tc: any, tcIdx: number) => {
                         const nameMap: Record<string, string> = {
-                          search_product: `Checked product catalog & on-hand inventory${tc.arguments?.query ? ` for '${tc.arguments.query}'` : ''}`,
-                          get_inventory_summary: "Calculated storewide stock levels & exact out-of-stock count",
-                          get_replenishment_recommendations: "Calculated purchase order requirements & supplier constraints",
+                          search_product: `Checked product catalog for '${tc.arguments?.query || ""}'`,
+                          get_inventory_summary: "Queried storewide catalog & out-of-stock count",
+                          get_replenishment_recommendations: "Calculated purchase order requirements",
                           get_action_queue: "Queried prioritized inventory action queue",
-                          get_product_details: "Retrieved product specifications & current stock level",
-                          get_stockout_risk: "Analyzed stockout probabilities and hourly depletion rates",
-                          get_stockout_risks: "Analyzed stockout probabilities and hourly depletion rates",
-                          get_anomalies: "Checked for phantom inventory & physical count discrepancies",
-                          get_data_quality: "Evaluated dataset quality and schema integrity",
+                          get_product_details: "Retrieved product specifications & stock level",
+                          get_stockout_risk: "Analyzed stockout probabilities & depletion hours",
+                          get_stockout_risks: "Analyzed stockout probabilities & depletion hours",
+                          get_anomalies: "Checked for phantom inventory & count discrepancies",
                         };
-                        const label = nameMap[tc.tool_name] || tc.tool_name.replace(/_/g, " ");
                         return (
-                          <div key={tcIdx} className="flex items-center gap-2">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0"></span>
-                            <span>{label}</span>
+                          <div key={tcIdx} className="flex items-center gap-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            <span>{nameMap[tc.tool_name] || tc.tool_name.replace(/_/g, " ")}</span>
                           </div>
                         );
                       })}
@@ -221,30 +205,28 @@ export default function CopilotPage() {
         })}
 
         {loading && (
-          <div className="flex items-center gap-3 text-gray-400 text-xs pl-1">
-            <div className="h-8 w-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center shrink-0 animate-pulse">
-              <Cpu className="h-4 w-4" />
-            </div>
-            <span>Analyzing live store stock, demand forecasts, and supplier lead times...</span>
+          <div className="flex items-center gap-2 text-xs text-slate-500 pl-11">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+            <span>Analyzing store stock levels, demand models, and supplier records...</span>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggested Quick Prompts */}
-      <div className="mb-4 flex flex-wrap gap-2">
+      {/* Suggested Prompts */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
         {suggestedPrompts.map((p, i) => (
           <button
             key={i}
             onClick={() => handleSend(p)}
-            className="text-xs px-3 py-1.5 rounded-lg bg-gray-900 border border-gray-800 hover:border-indigo-500 text-gray-300 hover:text-white transition"
+            className="text-[11px] px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:border-blue-400 hover:bg-blue-50/40 text-slate-600 hover:text-slate-900 transition-colors"
           >
             {p}
           </button>
         ))}
       </div>
 
-      {/* Input box */}
+      {/* Input Form */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -256,13 +238,13 @@ export default function CopilotPage() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask e.g. 'Is Pepsi in stock or not?', 'How many items are out of stock?'..."
-          className="w-full pl-4 pr-12 py-3.5 rounded-xl bg-gray-900/90 border border-gray-700 text-sm text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500 shadow-xl"
+          placeholder="Ask e.g. 'Is Pepsi in stock or not?', 'What should I order today?'..."
+          className="w-full pl-4 pr-12 py-3 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
         />
         <button
           type="submit"
           disabled={!input.trim() || loading}
-          className="absolute right-2 top-2 p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white transition"
+          className="absolute right-2 top-2 p-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white transition-colors"
         >
           <Send className="h-4 w-4" />
         </button>

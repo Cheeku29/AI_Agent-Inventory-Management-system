@@ -3,6 +3,10 @@
 import React, { useState, useEffect } from "react";
 import { History, ShieldCheck, CheckCircle2, XCircle, ArrowUpRight, Calendar, UserCheck } from "lucide-react";
 import { api } from "@/lib/api";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState, Skeleton } from "@/components/ui/EmptyState";
 
 export default function ActionHistoryPage() {
   const [activeDatasetId, setActiveDatasetId] = useState<string>("");
@@ -25,83 +29,77 @@ export default function ActionHistoryPage() {
   }, []);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10 w-full">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400 mb-1">
-          <History className="h-4 w-4" />
-          Audit & Governance Log
-        </div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">
-          Action History
-        </h1>
-        <p className="text-sm text-gray-400 mt-1">
-          Immutable audit record of operator approvals, rejections, and quantity overrides.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Audit & Governance Log"
+        description="Immutable enterprise audit record of human manager purchase approvals, order rejections, and quantity overrides."
+        badge={
+          <Badge variant="neutral" size="md">
+            {history.length} Actions Logged
+          </Badge>
+        }
+      />
 
       {loading ? (
-        <div className="text-center py-20 text-gray-400">Loading audit history...</div>
+        <Card className="p-6 space-y-3">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </Card>
       ) : history.length === 0 ? (
-        <div className="glass-panel p-12 text-center text-gray-400">
-          <History className="h-10 w-10 text-gray-500 mx-auto mb-3" />
-          <div className="text-base font-semibold text-white">No Decisions Recorded Yet</div>
-          <p className="text-xs text-gray-400 mt-1">
-            When you approve or reject replenishment orders in "What Should I Order?", they will appear here.
-          </p>
-        </div>
+        <EmptyState
+          icon={<History className="h-10 w-10 text-slate-400" />}
+          title="No Decisions Recorded Yet"
+          description="When you approve or reject replenishment orders in the Order Queue, decisions will automatically be logged here with timestamps."
+        />
       ) : (
-        <div className="glass-panel overflow-hidden border border-gray-800 rounded-xl shadow-xl">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-900/90 text-xs uppercase tracking-wider text-gray-400 border-b border-gray-800">
-              <tr>
-                <th className="py-3.5 px-4 font-semibold">Timestamp</th>
-                <th className="py-3.5 px-4 font-semibold">Action</th>
-                <th className="py-3.5 px-4 font-semibold">Product & SKU</th>
-                <th className="py-3.5 px-4 font-semibold text-right">Recommended</th>
-                <th className="py-3.5 px-4 font-semibold text-right">Approved Qty</th>
-                <th className="py-3.5 px-4 font-semibold">Operator / Reason</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800/60 text-gray-300">
-              {history.map((h) => {
-                const isApproved = h.action === "APPROVE";
-                return (
-                  <tr key={h.id} className="hover:bg-gray-800/30 transition">
-                    <td className="py-3.5 px-4 font-mono text-xs text-gray-400 whitespace-nowrap">
-                      {h.timestamp ? new Date(h.timestamp).toLocaleString() : "Just now"}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${
-                          isApproved
-                            ? "bg-emerald-950/80 border border-emerald-700 text-emerald-300"
-                            : "bg-red-950/80 border border-red-700 text-red-300"
-                        }`}
-                      >
-                        {isApproved ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                        {h.action}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="font-semibold text-white">{h.product_name || h.sku}</div>
-                      <div className="font-mono text-xs text-gray-400">{h.sku}</div>
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-gray-400">
-                      {h.original_quantity || 0}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono font-bold text-white">
-                      {h.approved_quantity || 0}
-                    </td>
-                    <td className="py-3.5 px-4 text-xs text-gray-400">
-                      <div className="text-gray-300 font-medium">{h.performed_by || "Human Operator"}</div>
-                      <div className="text-gray-400 truncate max-w-xs">{h.reason}</div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <Card className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 font-semibold border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-4">Timestamp</th>
+                  <th className="py-3 px-4">Action Taken</th>
+                  <th className="py-3 px-4">Product & SKU</th>
+                  <th className="py-3 px-4 text-right">AI Recommended</th>
+                  <th className="py-3 px-4 text-right">Approved Quantity</th>
+                  <th className="py-3 px-4">Operator / Audit Note</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-slate-700">
+                {history.map((h) => {
+                  const isApproved = h.action === "APPROVE";
+                  return (
+                    <tr key={h.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-3.5 px-4 font-mono text-slate-500 whitespace-nowrap">
+                        {h.timestamp ? new Date(h.timestamp).toLocaleString() : "Just now"}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <Badge variant={isApproved ? "success" : "critical"}>
+                          {isApproved ? "Approved" : "Rejected"}
+                        </Badge>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-slate-900">{h.product_name || h.sku}</div>
+                        <div className="font-mono text-[11px] text-slate-400">{h.sku}</div>
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono text-slate-500">
+                        {h.original_quantity || 0}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-900">
+                        {h.approved_quantity || 0}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-medium text-slate-900">{h.performed_by || "Human Operator"}</div>
+                        <div className="text-[11px] text-slate-500 truncate max-w-xs">{h.reason}</div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       )}
     </div>
   );

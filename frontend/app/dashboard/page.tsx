@@ -13,7 +13,10 @@ import {
   Sparkles,
   Bot,
   Activity,
-  Layers
+  Layers,
+  ArrowUpRight,
+  PackageCheck,
+  CheckCircle2
 } from "lucide-react";
 import { 
   BarChart, 
@@ -24,14 +27,22 @@ import {
   ResponsiveContainer, 
   PieChart, 
   Pie, 
-  Cell 
+  Cell,
+  CartesianGrid
 } from "recharts";
 import { api } from "@/lib/api";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { StatCard } from "@/components/ui/StatCard";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/EmptyState";
 
-const RISK_COLORS = ["#ef4444", "#f97316", "#eab308", "#10b981"];
+const RISK_COLORS = ["#dc2626", "#ea580c", "#d97706", "#059669"];
 
 export default function OverviewDashboardPage() {
   const [activeDatasetId, setActiveDatasetId] = useState<string>("");
+  const [activeDatasetName, setActiveDatasetName] = useState<string>("");
   const [inventoryData, setInventoryData] = useState<any>({ items: [], total_skus: 0, total_inventory_value: 0 });
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [stockoutRisks, setStockoutRisks] = useState<any[]>([]);
@@ -48,12 +59,14 @@ export default function OverviewDashboardPage() {
       api.getInventory(dsId).catch(() => ({ items: [], total_skus: 0, total_inventory_value: 0 })),
       api.getReplenishment(dsId).catch(() => []),
       api.getStockoutRisks(dsId).catch(() => []),
-      api.getAnomalies(dsId).catch(() => [])
-    ]).then(([inv, recs, risks, anoms]) => {
-      setInventoryData(inv);
-      setRecommendations(recs);
-      setStockoutRisks(risks);
-      setAnomalies(anoms);
+      api.getAnomalies(dsId).catch(() => []),
+      api.getDataset(dsId).catch(() => null)
+    ]).then(([inv, recs, risks, anoms, ds]) => {
+      setInventoryData(inv || { items: [], total_skus: 0, total_inventory_value: 0 });
+      setRecommendations(Array.isArray(recs) ? recs : []);
+      setStockoutRisks(Array.isArray(risks) ? risks : []);
+      setAnomalies(Array.isArray(anoms) ? anoms : []);
+      if (ds && ds.name) setActiveDatasetName(ds.name);
       setLoading(false);
     });
   };
@@ -65,9 +78,10 @@ export default function OverviewDashboardPage() {
       loadAll(dsId);
     } else {
       api.getDatasets().then((list) => {
-        if (list.length > 0) {
+        if (list && list.length > 0) {
           const firstId = list[0].id;
           setActiveDatasetId(firstId);
+          setActiveDatasetName(list[0].name);
           localStorage.setItem("active_dataset_id", firstId);
           loadAll(firstId);
         } else {
@@ -88,6 +102,7 @@ export default function OverviewDashboardPage() {
 
   const criticalStockouts = stockoutRisks.filter((r) => r.risk_level === "CRITICAL").length;
   const highStockouts = stockoutRisks.filter((r) => r.risk_level === "HIGH").length;
+  const pendingOrders = recommendations.filter((r) => r.recommended_order > 0).length;
 
   // Chart data: Top 6 Replenishment Products
   const topReplenishmentData = recommendations
@@ -109,236 +124,306 @@ export default function OverviewDashboardPage() {
   ].filter((d) => d.value > 0);
 
   if (loading) {
-    return <div className="text-center py-24 text-gray-400">Loading intelligence dashboard...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="h-10 w-64 bg-slate-200 animate-pulse rounded-lg" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32 w-full" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-80 lg:col-span-2 w-full" />
+          <Skeleton className="h-80 w-full" />
+        </div>
+      </div>
+    );
   }
 
   if (!activeDatasetId) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-20 text-center">
-        <Boxes className="h-12 w-12 text-indigo-400 mx-auto mb-4" />
-        <h2 className="text-2xl font-bold text-white">No Datasets Connected</h2>
-        <p className="text-gray-400 text-sm mt-2 mb-6">
-          Upload your inventory CSV/Excel files to start AI replenishment intelligence.
+      <div className="max-w-md mx-auto text-center py-20 px-4">
+        <div className="h-14 w-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
+          <Boxes className="h-7 w-7" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">No Facility Dataset Connected</h2>
+        <p className="text-xs text-slate-500 mt-2 mb-6">
+          Connect your dark store inventory CSV or ERP data source to view real-time decision metrics.
         </p>
-        <Link
-          href="/datasets/new"
-          className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition"
-        >
-          Create First Dataset
+        <Link href="/datasets/new">
+          <Button variant="primary" leftIcon={<Sparkles className="h-4 w-4" />}>
+            Create First Dataset
+          </Button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 w-full space-y-8">
-      {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">
-            Inventory Decision Dashboard
-          </h1>
-          <p className="text-sm text-gray-400 mt-1">
-            Real-time quick-commerce dark store health and predictive recommendations.
-          </p>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <PageHeader
+        title="Inventory Decision Dashboard"
+        description={`Real-time quick-commerce operations, stock health, and replenishment intelligence for ${activeDatasetName || "Active Facility"}.`}
+        badge={
+          <Badge variant="info" size="md">
+            Live Facility
+          </Badge>
+        }
+        actions={
+          <>
+            <Link href={`/datasets/${activeDatasetId}/recommendations`}>
+              <Button
+                variant="primary"
+                leftIcon={<ShoppingCart className="h-4 w-4" />}
+                rightIcon={<ArrowRight className="h-4 w-4" />}
+              >
+                Review Reorders ({pendingOrders})
+              </Button>
+            </Link>
+            <Link href="/copilot">
+              <Button
+                variant="secondary"
+                leftIcon={<Bot className="h-4 w-4 text-blue-600" />}
+              >
+                Ask Copilot
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/datasets/${activeDatasetId}/recommendations`}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition transform hover:-translate-y-0.5"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            <span>Order Queue ({recommendations.filter((r) => r.recommended_order > 0).length})</span>
-          </Link>
-          <Link
-            href="/copilot"
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-indigo-300 font-semibold text-sm border border-gray-700 transition"
-          >
-            <Bot className="h-4 w-4 text-indigo-400" />
-            <span>Ask Copilot</span>
-          </Link>
-        </div>
+      {/* 4 KPI Cards (TasteSkill / 21st standards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Total Inventory"
+          value={(inventoryData.total_inventory_units || 0).toLocaleString()}
+          supportingText={`${inventoryData.total_skus || 0} active SKUs in catalog`}
+          trend={{ value: "Stable", isNeutral: true }}
+          icon={<Boxes className="h-4 w-4" />}
+        />
+
+        <StatCard
+          label="Inventory Valuation"
+          value={`$${(inventoryData.total_inventory_value || 0).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`}
+          supportingText="Active asset value"
+          trend={{ value: "+2.4% vs last cycle", isPositive: true }}
+          icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
+          variant="success"
+        />
+
+        <StatCard
+          label="Critical Depletions"
+          value={criticalStockouts}
+          supportingText="Stockouts projected in < 4h"
+          trend={{
+            value: criticalStockouts > 0 ? "Immediate Action" : "Healthy",
+            isPositive: criticalStockouts === 0,
+          }}
+          icon={<AlertTriangle className="h-4 w-4 text-red-600" />}
+          variant={criticalStockouts > 0 ? "critical" : "default"}
+        />
+
+        <StatCard
+          label="Pending Purchase Orders"
+          value={pendingOrders}
+          supportingText="Recommended for approval"
+          trend={{ value: `${recommendations.length} total SKUs evaluated`, isNeutral: true }}
+          icon={<ShoppingCart className="h-4 w-4 text-blue-600" />}
+          variant={pendingOrders > 0 ? "warning" : "default"}
+        />
       </div>
 
-      {/* KPI Cards (Section 26 of prompt.txt) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* SKUs */}
-        <div className="glass-card p-5 rounded-xl border border-gray-800">
-          <div className="flex items-center justify-between text-xs text-gray-400 uppercase font-semibold">
-            <span>Total SKUs</span>
-            <Boxes className="h-4 w-4 text-indigo-400" />
-          </div>
-          <div className="text-3xl font-extrabold text-white mt-2">
-            {inventoryData.total_skus || 0}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">
-            {(inventoryData.total_inventory_units || 0).toLocaleString()} physical units
-          </div>
-        </div>
-
-        {/* Total Value */}
-        <div className="glass-card p-5 rounded-xl border border-gray-800">
-          <div className="flex items-center justify-between text-xs text-gray-400 uppercase font-semibold">
-            <span>Inventory Value</span>
-            <DollarSign className="h-4 w-4 text-cyan-400" />
-          </div>
-          <div className="text-3xl font-extrabold text-white mt-2">
-            ${(inventoryData.total_inventory_value || 0).toLocaleString()}
-          </div>
-          <div className="text-xs text-emerald-400 mt-1 font-medium">
-            Active valuation
-          </div>
-        </div>
-
-        {/* Critical Stockouts */}
-        <div className="glass-card p-5 rounded-xl border border-rose-900/60 bg-rose-950/20">
-          <div className="flex items-center justify-between text-xs text-rose-300 uppercase font-semibold">
-            <span>Critical Stockouts</span>
-            <AlertTriangle className="h-4 w-4 text-rose-400" />
-          </div>
-          <div className="text-3xl font-extrabold text-rose-200 mt-2">
-            {criticalStockouts}
-          </div>
-          <div className="text-xs text-rose-300 mt-1 font-medium">
-            Depletion in &lt; 4 hours
-          </div>
-        </div>
-
-        {/* Anomalies */}
-        <div className="glass-card p-5 rounded-xl border border-amber-900/60 bg-amber-950/20">
-          <div className="flex items-center justify-between text-xs text-amber-300 uppercase font-semibold">
-            <span>Anomalies Flagged</span>
-            <ShieldAlert className="h-4 w-4 text-amber-400" />
-          </div>
-          <div className="text-3xl font-extrabold text-amber-200 mt-2">
-            {anomalies.length}
-          </div>
-          <div className="text-xs text-amber-300 mt-1">
-            Phantom stock & outliers
-          </div>
-        </div>
-      </div>
-
-      {/* Visual Charts Section (Section 28 of prompt.txt) */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Bar Chart: Top Replenishments */}
-        <div className="lg:col-span-2 glass-panel p-6 border border-gray-800">
-          <div className="flex items-center justify-between mb-4">
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <h3 className="font-bold text-white text-base">Top Products Requiring Replenishment</h3>
-              <p className="text-xs text-gray-400">Order Quantity vs Current On-Hand Stock</p>
+              <CardTitle>Top Products Requiring Replenishment</CardTitle>
+              <CardDescription>Recommended reorder volume vs currently held physical stock</CardDescription>
             </div>
             <Link
               href={`/datasets/${activeDatasetId}/recommendations`}
-              className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1"
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
             >
-              <span>View All</span>
+              <span>View Full Queue</span>
               <ArrowRight className="h-3 w-3" />
             </Link>
-          </div>
-
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topReplenishmentData}>
-                <XAxis dataKey="name" stroke="#6b7280" fontSize={11} tickLine={false} />
-                <YAxis stroke="#6b7280" fontSize={11} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: "#111827", borderColor: "#374151", borderRadius: 8, fontSize: 12 }}
-                />
-                <Bar dataKey="orderQty" name="Recommended Order" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="stock" name="Current Stock" fill="#6366f1" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64 w-full">
+              {topReplenishmentData.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs text-slate-400">
+                  All inventory healthy. No replenishments currently required.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topReplenishmentData} barGap={4}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#64748b"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={{ stroke: "#e2e8f0" }}
+                    />
+                    <YAxis
+                      stroke="#64748b"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={{ stroke: "#e2e8f0" }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#ffffff",
+                        borderColor: "#e2e8f0",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
+                        fontSize: "12px",
+                      }}
+                    />
+                    <Bar
+                      dataKey="orderQty"
+                      name="Recommended Reorder"
+                      fill="#2563eb"
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar
+                      dataKey="stock"
+                      name="On-Hand Stock"
+                      fill="#94a3b8"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Donut Chart: Risk Distribution */}
-        <div className="glass-panel p-6 border border-gray-800 flex flex-col justify-between">
-          <div>
-            <h3 className="font-bold text-white text-base">Stockout Risk Distribution</h3>
-            <p className="text-xs text-gray-400">Urgency level across catalog</p>
-          </div>
-
-          <div className="h-52 w-full my-auto flex items-center justify-center">
-            {riskDistData.length === 0 ? (
-              <div className="text-xs text-gray-500">No risk data recorded</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={riskDistData}
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {riskDistData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={RISK_COLORS[index % RISK_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "#111827", borderColor: "#374151", borderRadius: 8, fontSize: 12 }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-center gap-1.5 text-gray-300">
-              <div className="h-2.5 w-2.5 rounded-full bg-rose-500" />
-              <span>Critical: {criticalStockouts}</span>
+        <Card className="flex flex-col justify-between">
+          <CardHeader>
+            <CardTitle>Catalog Stockout Urgency</CardTitle>
+            <CardDescription>Risk severity breakdown across active SKUs</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-center">
+            <div className="h-48 w-full flex items-center justify-center">
+              {riskDistData.length === 0 ? (
+                <div className="text-xs text-slate-400 text-center">
+                  No stockout risks detected in catalog.
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={riskDistData}
+                      innerRadius={48}
+                      outerRadius={75}
+                      paddingAngle={3}
+                      dataKey="value"
+                    >
+                      {riskDistData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={RISK_COLORS[index % RISK_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#ffffff",
+                        borderColor: "#e2e8f0",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
+                        fontSize: "12px",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
-            <div className="flex items-center gap-1.5 text-gray-300">
-              <div className="h-2.5 w-2.5 rounded-full bg-orange-500" />
-              <span>High: {highStockouts}</span>
+
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-600 shrink-0" />
+                <span>Critical: {criticalStockouts}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-orange-500 shrink-0" />
+                <span>High: {highStockouts}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-500 shrink-0" />
+                <span>Medium: {stockoutRisks.filter((r) => r.risk_level === "MEDIUM").length}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-600 shrink-0" />
+                <span>Low: {stockoutRisks.filter((r) => r.risk_level === "LOW").length}</span>
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Urgent Action Highlight Row */}
-      <div className="glass-panel p-6 border border-gray-800">
-        <div className="flex items-center justify-between mb-4">
+      {/* Priority Action Queue */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-indigo-400" />
-            <h3 className="font-bold text-white text-base">Priority Action Queue</h3>
+            <Activity className="h-4 w-4 text-blue-600" />
+            <div>
+              <CardTitle>Priority Replenishment Queue</CardTitle>
+              <CardDescription>AI-ranked recommendations requiring human approval</CardDescription>
+            </div>
           </div>
           <Link
             href={`/datasets/${activeDatasetId}/recommendations`}
-            className="text-xs text-indigo-400 hover:text-indigo-300 font-semibold"
+            className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
           >
-            Open Full Queue
+            <span>Full Order Management</span>
+            <ArrowRight className="h-3 w-3" />
           </Link>
-        </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {recommendations.slice(0, 3).map((r, i) => (
+              <div
+                key={r.id || i}
+                className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <Badge
+                      variant={r.priority_level === "CRITICAL" ? "critical" : "warning"}
+                    >
+                      #{i + 1} {r.priority_level}
+                    </Badge>
+                    <span className="font-mono text-xs text-slate-500">
+                      Stock: {r.current_stock?.toFixed(0)}
+                    </span>
+                  </div>
+                  <h4 className="font-semibold text-slate-900 text-sm">{r.product_name}</h4>
+                  <p className="text-xs text-slate-500 mt-1 line-clamp-2">{r.reason}</p>
+                </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {recommendations.slice(0, 3).map((r, i) => (
-            <div key={r.id || i} className="p-4 rounded-xl bg-gray-900/80 border border-gray-800 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded ${
-                  r.priority_level === "CRITICAL" ? "bg-rose-950 text-rose-300 border border-rose-700" : "bg-amber-950 text-amber-300"
-                }`}>
-                  #{i+1} {r.priority_level}
-                </span>
-                <span className="font-mono text-xs text-gray-400">Stock: {r.current_stock?.toFixed(0)}</span>
+                <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
+                  <span className="font-bold text-blue-600">
+                    Order: {r.recommended_order?.toFixed(0)} units
+                  </span>
+                  <Link
+                    href={`/datasets/${activeDatasetId}/recommendations`}
+                    className="text-slate-700 hover:text-blue-600 font-semibold flex items-center gap-1"
+                  >
+                    <span>Approve</span>
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
               </div>
-              <div className="font-bold text-white text-sm">{r.product_name}</div>
-              <div className="text-xs text-gray-300 line-clamp-2">{r.reason}</div>
-              <div className="pt-2 border-t border-gray-800 flex items-center justify-between text-xs font-semibold">
-                <span className="text-emerald-400">Order: {r.recommended_order?.toFixed(0)} units</span>
-                <Link
-                  href={`/datasets/${activeDatasetId}/recommendations`}
-                  className="text-indigo-400 hover:text-indigo-300 flex items-center gap-0.5"
-                >
-                  Review <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

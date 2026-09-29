@@ -14,6 +14,9 @@ import {
   BarChart3
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 const STAGES = [
   { id: "profiling", label: "Profiling & ingesting uploaded files in DuckDB", icon: Database },
@@ -40,7 +43,6 @@ export default function AnalysisProgressPage() {
   useEffect(() => {
     let stageInterval: any;
 
-    // Simulate progress through analytical stages while API executes
     stageInterval = setInterval(() => {
       setCurrentStageIdx((prev) => {
         if (prev < STAGES.length - 2) {
@@ -50,7 +52,6 @@ export default function AnalysisProgressPage() {
       });
     }, 700);
 
-    // Call real FastAPI backend analysis endpoint
     api.triggerAnalysis(datasetId)
       .then((res) => {
         clearInterval(stageInterval);
@@ -68,74 +69,67 @@ export default function AnalysisProgressPage() {
   }, [datasetId]);
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-16">
-      <div className="text-center mb-10">
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">
+    <div className="max-w-2xl mx-auto space-y-6 py-6">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
           Processing Dark Store Intelligence
         </h1>
-        <p className="text-sm text-gray-400 mt-2">
-          Executing high-performance DuckDB transformations and ML models
+        <p className="text-xs text-slate-500 mt-1">
+          Executing high-performance DuckDB transformations, LightGBM forecasts, and Poisson replenishment
         </p>
       </div>
 
       {errorMsg && (
-        <div className="mb-6 p-4 rounded-xl bg-red-950/60 border border-red-800 text-sm text-red-200">
+        <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">
           {errorMsg}
         </div>
       )}
 
-      {/* Stages Card */}
-      <div className="glass-panel p-8 rounded-2xl border border-gray-800 shadow-2xl">
-        <div className="space-y-4">
+      <Card className="p-6">
+        <div className="space-y-3">
           {STAGES.map((s, idx) => {
-            const Icon = s.icon;
             const isFinished = idx < currentStageIdx || isDone;
             const isCurrent = idx === currentStageIdx && !isDone;
 
             return (
               <div
                 key={s.id}
-                className={`flex items-center gap-4 p-3.5 rounded-xl transition ${
+                className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
                   isCurrent
-                    ? "bg-indigo-950/40 border border-indigo-500/40"
+                    ? "bg-blue-50 border border-blue-200 text-blue-900"
                     : isFinished
-                    ? "text-gray-300"
-                    : "text-gray-400 opacity-60"
+                    ? "text-slate-800"
+                    : "text-slate-400 opacity-60"
                 }`}
               >
                 <div className="shrink-0">
                   {isFinished ? (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                   ) : isCurrent ? (
-                    <Loader2 className="h-5 w-5 text-indigo-400 animate-spin" />
+                    <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
                   ) : (
-                    <div className="h-5 w-5 rounded-full border border-gray-700" />
+                    <div className="h-4 w-4 rounded-full border border-slate-300" />
                   )}
                 </div>
-                <div className="flex-1 text-sm font-medium">
-                  {s.label}
-                </div>
+                <div className="text-xs font-medium">{s.label}</div>
               </div>
             );
           })}
         </div>
 
-        {/* Action button when complete */}
         {isDone && (
-          <div className="mt-8 pt-6 border-t border-gray-800 text-center animate-fade-in">
-            <div className="mb-4 text-xs font-semibold text-emerald-400 uppercase tracking-wider">
-              {pipelineSummary?.recommendations_count || 17} Products Require Replenishment Action
-            </div>
-            <button
+          <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+            <Button
+              variant="primary"
+              size="lg"
               onClick={() => router.push(`/datasets/${datasetId}/recommendations`)}
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/30 transition transform hover:-translate-y-0.5"
+              rightIcon={<ArrowRight className="h-4 w-4" />}
             >
-              <span>View "What Should I Order?" Dashboard</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
+              Open Purchase Order Recommendations
+            </Button>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

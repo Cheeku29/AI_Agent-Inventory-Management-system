@@ -5,14 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import { 
   UploadCloud, 
   FileText, 
-  CheckCircle2, 
   ArrowRight, 
   Trash2, 
   AlertCircle,
-  FileSpreadsheet,
-  Boxes
+  FileSpreadsheet
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 export default function DatasetUploadPage() {
   const params = useParams();
@@ -45,7 +46,7 @@ export default function DatasetUploadPage() {
 
   const handleUploadAndProceed = async () => {
     if (files.length === 0) {
-      setErrorMsg("Please select at least one CSV, XLSX, or Parquet file to upload.");
+      setErrorMsg("Please select at least one CSV, XLSX, or Parquet file.");
       return;
     }
     setUploading(true);
@@ -60,22 +61,19 @@ export default function DatasetUploadPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
-      <div className="mb-8">
-        <div className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">
-          Universal Data Ingestion
-        </div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">
-          Upload Inventory Datasets
-        </h1>
-        <p className="text-sm text-gray-400 mt-1">
-          Upload CSV, Excel, or Parquet files from your WMS or ERP. Any column headers are supported.
-        </p>
-      </div>
+    <div className="max-w-3xl mx-auto space-y-6 py-4">
+      <PageHeader
+        title="Upload Facility Datasets"
+        description="Ingest CSV, Excel, or Parquet files from your WMS, ERP, or spreadsheet exports."
+        breadcrumbs={[
+          { label: "Data Sources", href: "/datasets" },
+          { label: "File Ingestion" },
+        ]}
+      />
 
       {errorMsg && (
-        <div className="mb-6 p-4 rounded-xl bg-red-950/60 border border-red-800 text-sm text-red-200 flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
+        <div className="p-3.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
@@ -85,7 +83,7 @@ export default function DatasetUploadPage() {
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className="cursor-pointer border-2 border-dashed border-gray-700 hover:border-indigo-500 rounded-2xl p-10 text-center bg-gray-900/40 hover:bg-gray-900/70 transition"
+        className="cursor-pointer border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-10 text-center bg-white hover:bg-blue-50/20 transition-colors"
       >
         <input
           type="file"
@@ -95,78 +93,64 @@ export default function DatasetUploadPage() {
           onChange={handleFileChange}
           className="hidden"
         />
-        <div className="h-16 w-16 mx-auto rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4">
-          <UploadCloud className="h-8 w-8" />
+        <div className="h-12 w-12 mx-auto rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+          <UploadCloud className="h-6 w-6" />
         </div>
-        <div className="text-base font-semibold text-white">
+        <div className="text-sm font-semibold text-slate-900">
           Click to upload or drag and drop files here
         </div>
-        <div className="text-xs text-gray-400 mt-1">
+        <div className="text-xs text-slate-500 mt-1">
           Supports CSV, XLSX, Parquet (e.g. inventory.csv, sales.csv, products.csv, suppliers.csv)
         </div>
       </div>
 
-      {/* Selected Files List */}
+      {/* Staged Files List */}
       {files.length > 0 && (
-        <div className="mt-8 space-y-3">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+        <Card className="p-4 space-y-2.5">
+          <div className="text-xs font-semibold text-slate-700">
             Files Staged for Ingestion ({files.length})
           </div>
-          <div className="grid grid-cols-1 gap-2.5">
+          <div className="space-y-1.5">
             {files.map((file, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between p-3.5 rounded-xl bg-gray-900/80 border border-gray-800"
+                className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs"
               >
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-300">
-                    <FileSpreadsheet className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-white">{file.name}</div>
-                    <div className="text-xs text-gray-400">
-                      {(file.size / 1024).toFixed(1)} KB &bull; {file.type || "file"}
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2.5">
+                  <FileSpreadsheet className="h-4 w-4 text-slate-500" />
+                  <span className="font-medium text-slate-900">{file.name}</span>
+                  <span className="text-slate-400">({(file.size / 1024).toFixed(1)} KB)</span>
                 </div>
                 <button
                   type="button"
                   onClick={() => removeFile(idx)}
-                  className="p-1.5 text-gray-400 hover:text-red-400 transition"
+                  className="p-1 text-slate-400 hover:text-red-600 transition-colors"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
 
-      {/* Navigation action */}
-      <div className="mt-10 flex items-center justify-between">
-        <button
-          type="button"
+      {/* Actions */}
+      <div className="flex items-center justify-between pt-2">
+        <Button
+          variant="secondary"
           onClick={() => router.push("/datasets")}
-          className="text-sm text-gray-400 hover:text-white"
         >
           Cancel
-        </button>
-
-        <button
-          type="button"
-          disabled={uploading || files.length === 0}
+        </Button>
+        <Button
+          variant="primary"
+          disabled={files.length === 0}
+          isLoading={uploading}
+          rightIcon={<ArrowRight className="h-4 w-4" />}
           onClick={handleUploadAndProceed}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-sm shadow-lg shadow-indigo-600/30 transition transform hover:-translate-y-0.5"
         >
-          {uploading ? (
-            <span>Profiling & Ingesting Files...</span>
-          ) : (
-            <>
-              <span>Confirm & Profile Data</span>
-              <ArrowRight className="h-4 w-4" />
-            </>
-          )}
-        </button>
+          Confirm & Profile Schema
+        </Button>
       </div>
     </div>
   );
