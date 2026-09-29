@@ -1,0 +1,1331 @@
+============================================================
+AI INVENTORY DECISION ENGINE
+INDUSTRY-LEVEL PROJECT SETUP + ARCHITECTURE
+============================================================
+
+PROJECT NAME
+AI Inventory Decision Engine
+
+============================================================
+1. PRODUCT OBJECTIVE
+============================================================
+
+Build an industry-level AI Inventory Decision Engine for
+quick-commerce dark stores.
+
+The system acts as an intelligence and decision layer on top
+of existing inventory/WMS/ERP/procurement systems.
+
+The system should transform:
+
+"What is happening?"
+
+into:
+
+"What is likely to happen?"
+"Why is it happening?"
+"What should we do?"
+"Which action is most urgent?"
+
+The application must eventually support:
+
+- User authentication
+- Google login
+- Dataset/workspace creation
+- CSV upload
+- Automatic dataset profiling
+- Automatic schema understanding
+- Schema mapping
+- Large-scale data processing
+- Demand forecasting
+- Stockout prediction
+- Overstock detection
+- Inventory anomaly detection
+- Phantom inventory detection
+- Expiry risk detection
+- Replenishment optimization
+- Priority scoring
+- AI explanations
+- Human approval of recommendations
+- AI Inventory Copilot
+- Audit history
+
+============================================================
+2. INDUSTRY-LEVEL ARCHITECTURE
+============================================================
+
+Use a modular monorepo architecture.
+
+High-level system:
+
+                         USER
+                          |
+                          v
+                  NEXT.JS FRONTEND
+                          |
+                          v
+                    FASTAPI API
+                          |
+                          v
+                 AI COPILOT / LLM
+                          |
+                          v
+                 SUPERVISOR AGENT
+                          |
+             +------------+------------+
+             |            |            |
+             v            v            v
+        DATA AGENT    RISK AGENT   FORECAST &
+                                  OPTIMIZATION
+                                      AGENT
+             |            |            |
+             +------------+------------+
+                          |
+                          v
+                  ANALYTICAL TOOLS
+                          |
+        +-----------------+------------------+
+        |                 |                  |
+        v                 v                  v
+     DuckDB            ML Models         Optimization
+    /PyArrow          LightGBM          /Business Rules
+        |                 |                  |
+        +-----------------+------------------+
+                          |
+                          v
+                     SUPABASE
+                          |
+                          v
+                      RESULTS
+                          |
+                          v
+                     DASHBOARD
+                          |
+                          v
+                  HUMAN APPROVAL
+                          |
+                          v
+                   ACTION HISTORY
+
+============================================================
+3. AGENT ARCHITECTURE
+============================================================
+
+There are FIVE agentic components.
+
+IMPORTANT:
+
+Do NOT implement five independent LLM chatbots.
+
+Use one primary AI Copilot/Supervisor workflow with
+specialized capabilities/tools.
+
+The architecture should be:
+
+USER
+ ↓
+AI COPILOT / LLM
+ ↓
+SUPERVISOR AGENT
+ ↓
+ ┌───────────────────────┬──────────────────────┐
+ ↓                       ↓                      ↓
+DATA AGENT           RISK AGENT          FORECAST &
+                                          OPTIMIZATION
+                                          AGENT
+ ↓                       ↓                      ↓
+ └───────────────────────┴──────────────────────┘
+                         ↓
+                  FINAL EXPLANATION
+                         ↓
+                        USER
+
+
+============================================================
+4. AI COPILOT
+============================================================
+
+Technology:
+
+Gemini
+
+Framework:
+
+LangGraph
+
+Purpose:
+
+The AI Copilot is the natural-language interface.
+
+Examples:
+
+"What should I order today?"
+
+"Which products are at risk of stockout?"
+
+"Why is SKU 123 high priority?"
+
+"Which products are overstocked?"
+
+"Show me unusual inventory movements."
+
+"Why should I order 50 units?"
+
+The Copilot should NOT invent numerical values.
+
+It must call tools and use actual results from the system.
+
+============================================================
+5. SUPERVISOR AGENT
+============================================================
+
+The Supervisor is the central orchestration layer.
+
+Responsibilities:
+
+- Understand user intent
+- Determine which specialist capability is required
+- Select appropriate tools
+- Coordinate multi-step analysis
+- Pass context between specialist agents
+- Combine results
+- Decide when enough information has been collected
+- Ask the user for clarification when required
+- Return a final explainable answer
+
+Example:
+
+User:
+
+"What should I order today?"
+
+Supervisor:
+
+1. Call inventory tool
+2. Call demand forecast tool
+3. Call risk tool
+4. Call replenishment tool
+5. Rank recommendations
+6. Return explanation
+
+The Supervisor should be implemented using LangGraph.
+
+============================================================
+6. DATA INTELLIGENCE AGENT
+============================================================
+
+Purpose:
+
+Understand newly uploaded datasets.
+
+Responsibilities:
+
+- Inspect uploaded files
+- Identify file types
+- Understand columns
+- Detect data types
+- Detect date columns
+- Detect identifiers
+- Detect numeric fields
+- Detect categorical fields
+- Detect missing data
+- Suggest dataset roles
+- Map arbitrary column names to canonical fields
+- Validate schema
+- Report data quality problems
+
+Example:
+
+Uploaded:
+
+inventory_2026.csv
+sales_history.csv
+vendors.csv
+
+The Data Agent may determine:
+
+inventory_2026.csv
+→ Inventory
+
+sales_history.csv
+→ Sales
+
+vendors.csv
+→ Supplier
+
+It must support arbitrary filenames and column names.
+
+============================================================
+7. INVENTORY RISK AGENT
+============================================================
+
+Purpose:
+
+Identify inventory risks.
+
+Responsibilities:
+
+- Stockout risk
+- Overstock
+- Expiry risk
+- Inventory anomalies
+- Phantom inventory
+- Unusual stock movements
+- Demand/supply mismatch
+- Slow-moving inventory
+
+The Risk Agent should consume outputs from deterministic
+ML models and analytics.
+
+Do NOT allow the LLM to invent risk scores.
+
+Risk calculations must come from actual analytical
+services.
+
+============================================================
+8. FORECAST & OPTIMIZATION AGENT
+============================================================
+
+Purpose:
+
+Determine what action should be taken.
+
+Responsibilities:
+
+- Demand forecasting
+- Expected demand
+- Safety stock
+- Reorder point
+- Replenishment quantity
+- Supplier lead-time considerations
+- Incoming stock
+- MOQ
+- Pack size
+- Priority scoring
+
+Output should include:
+
+SKU
+Product
+Current stock
+Forecast demand
+Risk
+Recommended quantity
+Priority
+Reason
+Confidence
+
+The actual numerical calculations must be performed by
+ML/optimization services.
+
+The LLM only interprets and explains those results.
+
+============================================================
+9. MACHINE LEARNING LAYER
+============================================================
+
+Use:
+
+LightGBM
+scikit-learn
+NumPy
+Pandas
+
+ML capabilities:
+
+1. Demand forecasting
+2. Stockout prediction
+3. Inventory anomaly detection
+4. Overstock detection
+5. Expiry risk prediction
+
+Keep model training separate from the production API.
+
+Training code:
+
+ml/training/
+
+Inference:
+
+backend/app/ml/
+
+Model artifacts:
+
+ml/models/
+
+The system must eventually support training using large
+datasets on Google Colab GPU.
+
+The laptop must not be required to have a GPU.
+
+============================================================
+10. LARGE DATA PROCESSING
+============================================================
+
+The dataset may contain millions of rows.
+
+This is a critical architecture requirement.
+
+DO NOT:
+
+- Load entire CSVs into RAM
+- Build giant Python dictionaries
+- Build millions of Python objects
+- Store all candidate pairs in Python lists
+- Perform unnecessary pandas operations on entire datasets
+
+Use:
+
+DuckDB
+PyArrow
+Parquet
+SQL
+Streaming
+Chunk processing
+Disk-backed intermediate tables
+
+Pipeline:
+
+CSV
+ ↓
+File validation
+ ↓
+DuckDB/PyArrow
+ ↓
+Parquet
+ ↓
+SQL transformations
+ ↓
+Feature generation
+ ↓
+ML inference
+ ↓
+Optimization
+ ↓
+Recommendations
+
+Pandas may be used for small samples and ML operations where
+appropriate.
+
+============================================================
+11. PROJECT STRUCTURE
+============================================================
+
+Create the following industry-level monorepo:
+
+ai-inventory-decision-engine/
+│
+├── frontend/
+│   │
+│   ├── app/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   │
+│   │   ├── login/
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── dashboard/
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── datasets/
+│   │   │   ├── page.tsx
+│   │   │   ├── new/
+│   │   │   │   └── page.tsx
+│   │   │   └── [datasetId]/
+│   │   │       ├── page.tsx
+│   │   │       ├── upload/
+│   │   │       │   └── page.tsx
+│   │   │       ├── mapping/
+│   │   │       │   └── page.tsx
+│   │   │       ├── analysis/
+│   │   │       │   └── page.tsx
+│   │   │       └── recommendations/
+│   │   │           └── page.tsx
+│   │   │
+│   │   ├── copilot/
+│   │   │   └── page.tsx
+│   │   │
+│   │   ├── actions/
+│   │   │   └── page.tsx
+│   │   │
+│   │   └── settings/
+│   │       └── page.tsx
+│   │
+│   ├── components/
+│   │   ├── ui/
+│   │   ├── layout/
+│   │   ├── dashboard/
+│   │   ├── inventory/
+│   │   ├── datasets/
+│   │   ├── upload/
+│   │   ├── charts/
+│   │   ├── risks/
+│   │   ├── recommendations/
+│   │   └── copilot/
+│   │
+│   ├── lib/
+│   │   ├── api.ts
+│   │   ├── auth.ts
+│   │   ├── utils.ts
+│   │   └── supabase/
+│   │       ├── client.ts
+│   │       └── server.ts
+│   │
+│   ├── types/
+│   │   └── index.ts
+│   │
+│   ├── public/
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── next.config.ts
+│   ├── tailwind.config.ts
+│   ├── postcss.config.mjs
+│   └── .env.example
+│
+│
+├── backend/
+│   │
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   │
+│   │   ├── api/
+│   │   │   ├── auth.py
+│   │   │   ├── datasets.py
+│   │   │   ├── uploads.py
+│   │   │   ├── mapping.py
+│   │   │   ├── analysis.py
+│   │   │   ├── forecasts.py
+│   │   │   ├── risks.py
+│   │   │   ├── recommendations.py
+│   │   │   ├── actions.py
+│   │   │   └── copilot.py
+│   │   │
+│   │   ├── core/
+│   │   │   ├── config.py
+│   │   │   ├── security.py
+│   │   │   ├── logging.py
+│   │   │   └── exceptions.py
+│   │   │
+│   │   ├── db/
+│   │   │   ├── supabase.py
+│   │   │   └── repositories/
+│   │   │
+│   │   ├── schemas/
+│   │   │   ├── dataset.py
+│   │   │   ├── inventory.py
+│   │   │   ├── forecast.py
+│   │   │   ├── risk.py
+│   │   │   ├── recommendation.py
+│   │   │   └── copilot.py
+│   │   │
+│   │   ├── ingestion/
+│   │   │   ├── file_detector.py
+│   │   │   ├── csv_profiler.py
+│   │   │   ├── schema_mapper.py
+│   │   │   ├── validator.py
+│   │   │   └── parquet_converter.py
+│   │   │
+│   │   ├── processing/
+│   │   │   ├── duckdb_engine.py
+│   │   │   ├── transformations.py
+│   │   │   ├── aggregations.py
+│   │   │   └── chunk_processor.py
+│   │   │
+│   │   ├── features/
+│   │   │   ├── demand_features.py
+│   │   │   ├── inventory_features.py
+│   │   │   ├── sales_features.py
+│   │   │   └── anomaly_features.py
+│   │   │
+│   │   ├── ml/
+│   │   │   ├── forecasting/
+│   │   │   ├── stockout/
+│   │   │   ├── anomaly/
+│   │   │   ├── overstock/
+│   │   │   ├── expiry/
+│   │   │   └── model_registry.py
+│   │   │
+│   │   ├── optimization/
+│   │   │   ├── replenishment.py
+│   │   │   ├── priority.py
+│   │   │   └── action_selection.py
+│   │   │
+│   │   ├── agents/
+│   │   │   ├── graph.py
+│   │   │   ├── state.py
+│   │   │   ├── supervisor.py
+│   │   │   ├── data_agent.py
+│   │   │   ├── risk_agent.py
+│   │   │   ├── forecast_agent.py
+│   │   │   ├── tools.py
+│   │   │   └── prompts.py
+│   │   │
+│   │   └── services/
+│   │       ├── gemini_service.py
+│   │       ├── dataset_service.py
+│   │       ├── analysis_service.py
+│   │       ├── recommendation_service.py
+│   │       └── audit_service.py
+│   │
+│   ├── tests/
+│   ├── requirements.txt
+│   ├── .env
+│   ├── .env.example
+│   └── README.md
+│
+│
+├── ml/
+│   ├── notebooks/
+│   ├── training/
+│   ├── inference/
+│   ├── features/
+│   ├── evaluation/
+│   └── models/
+│
+│
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   ├── sample/
+│   └── artifacts/
+│
+│
+├── supabase/
+│   ├── migrations/
+│   └── seed.sql
+│
+│
+├── scripts/
+│   ├── setup.sh
+│   ├── setup.ps1
+│   ├── health_check.py
+│   └── migrate.py
+│
+│
+├── docs/
+│   ├── architecture.md
+│   ├── setup.md
+│   ├── api.md
+│   ├── data-contract.md
+│   └── agent-workflow.md
+│
+├── .gitignore
+├── environment.yml
+├── README.md
+└── docker-compose.yml
+
+============================================================
+12. CONDA ENVIRONMENT
+============================================================
+
+Use:
+
+Python 3.10.13
+
+Create:
+
+conda create -n inventory-ai python=3.10.13 -y
+
+Activate:
+
+conda activate inventory-ai
+
+Create environment.yml:
+
+name: inventory-ai
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.10.13
+  - pip
+  - pip:
+      - fastapi
+      - uvicorn
+      - pydantic
+      - pydantic-settings
+      - python-dotenv
+      - python-multipart
+      - pandas
+      - numpy
+      - scipy
+      - scikit-learn
+      - lightgbm
+      - duckdb
+      - pyarrow
+      - supabase
+      - httpx
+      - joblib
+      - langgraph
+      - langchain
+      - langchain-google-genai
+
+============================================================
+13. ENVIRONMENT VARIABLES
+============================================================
+
+Backend:
+
+backend/.env
+
+Required variables:
+
+SUPABASE_URL=
+SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
+GEMINI_API_KEY=
+
+Create:
+
+backend/.env.example
+
+with the same variable names but empty values.
+
+Frontend:
+
+frontend/.env.example
+
+Use:
+
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+
+IMPORTANT:
+
+Never expose:
+
+SUPABASE_SECRET_KEY
+GEMINI_API_KEY
+
+to the frontend.
+
+Never use NEXT_PUBLIC_ for secrets.
+
+============================================================
+14. ENVIRONMENT CONFIGURATION
+============================================================
+
+Create:
+
+backend/app/core/config.py
+
+Use Pydantic Settings.
+
+Load:
+
+SUPABASE_URL
+SUPABASE_PUBLISHABLE_KEY
+SUPABASE_SECRET_KEY
+GEMINI_API_KEY
+
+from backend/.env.
+
+Never print secret values.
+
+Never commit .env.
+
+============================================================
+15. GITIGNORE
+============================================================
+
+Create a root .gitignore.
+
+Include:
+
+.env
+.env.local
+.env.*.local
+
+__pycache__/
+*.pyc
+.pytest_cache/
+
+.venv/
+venv/
+
+node_modules/
+.next/
+
+.ipynb_checkpoints/
+
+data/raw/*
+data/processed/*
+data/artifacts/*
+
+*.parquet
+*.pkl
+*.joblib
+*.model
+*.bin
+*.log
+
+============================================================
+16. FRONTEND TECHNOLOGY
+============================================================
+
+Use:
+
+Next.js
+TypeScript
+Tailwind CSS
+Recharts
+Lucide React
+Supabase JS
+Supabase SSR
+
+The frontend must communicate with FastAPI for business
+logic.
+
+Do not put ML/business logic in frontend components.
+
+============================================================
+17. BACKEND TECHNOLOGY
+============================================================
+
+Use:
+
+FastAPI
+Pydantic
+Pydantic Settings
+Supabase
+DuckDB
+PyArrow
+
+FastAPI is the central application API.
+
+Create:
+
+GET /health
+
+Response:
+
+{
+    "status": "ok"
+}
+
+============================================================
+18. DATABASE FOUNDATION
+============================================================
+
+Use Supabase PostgreSQL.
+
+Prepare migrations for the future entities:
+
+profiles
+datasets
+uploaded_files
+dataset_schema
+schema_mappings
+processing_jobs
+inventory
+sales
+products
+suppliers
+forecasts
+risk_predictions
+anomalies
+recommendations
+actions
+copilot_conversations
+audit_logs
+
+All user-owned records must be associated with the correct
+authenticated user.
+
+Enable Row Level Security.
+
+============================================================
+19. AUTHENTICATION
+============================================================
+
+Use:
+
+Supabase Auth
+
+Authentication provider:
+
+Google OAuth
+
+User flow:
+
+Landing Page
+ ↓
+Continue with Google
+ ↓
+Google
+ ↓
+Supabase Auth
+ ↓
+Dashboard
+
+Prepare the frontend and backend architecture for this flow.
+
+============================================================
+20. DATA FLOW
+============================================================
+
+The complete future data workflow is:
+
+USER
+ ↓
+Google Authentication
+ ↓
+Dashboard
+ ↓
+Create Dataset
+ ↓
+Upload CSV files
+ ↓
+Data Intelligence Agent
+ ↓
+File profiling
+ ↓
+Schema mapping
+ ↓
+Data validation
+ ↓
+DuckDB / PyArrow
+ ↓
+Parquet
+ ↓
+Feature engineering
+ ↓
+ML inference
+ ↓
+Risk detection
+ ↓
+Forecasting
+ ↓
+Optimization
+ ↓
+Prioritized recommendations
+ ↓
+Supabase
+ ↓
+Dashboard
+ ↓
+AI Copilot
+ ↓
+Human approval
+ ↓
+Action history
+
+============================================================
+21. AI DECISION FLOW
+============================================================
+
+For a user question:
+
+USER
+ ↓
+AI COPILOT / GEMINI
+ ↓
+SUPERVISOR AGENT
+ ↓
+Specialized Agent(s)
+ ↓
+Tools
+ ↓
+Actual database / ML / optimization results
+ ↓
+Supervisor
+ ↓
+Gemini explanation
+ ↓
+USER
+
+Example:
+
+User:
+"What should I order today?"
+
+Supervisor:
+
+1. Get current inventory
+2. Get demand forecast
+3. Get stockout risk
+4. Get replenishment recommendations
+5. Rank actions
+6. Explain top recommendations
+
+============================================================
+22. AGENT RULE
+============================================================
+
+The agents must NOT directly manipulate raw data blindly.
+
+Agents should call controlled backend tools.
+
+Create tools such as:
+
+get_inventory()
+get_sales()
+get_forecast()
+get_stockout_risk()
+get_anomalies()
+get_overstock_risk()
+get_expiry_risk()
+get_replenishment_recommendations()
+get_action_queue()
+get_product_details()
+
+Numerical outputs must originate from backend services,
+database queries, ML models, or optimization logic.
+
+The LLM explains the results.
+
+The LLM must not invent:
+
+- Stock quantities
+- Forecast values
+- Order quantities
+- Risk scores
+- Prices
+- Dates
+
+============================================================
+23. SECURITY FOUNDATION
+============================================================
+
+Never hardcode:
+
+API keys
+Passwords
+OAuth secrets
+Database secrets
+
+Backend secrets:
+
+SUPABASE_SECRET_KEY
+GEMINI_API_KEY
+
+must remain server-side.
+
+Use authenticated user identity for all protected requests.
+
+Users must only access their own datasets.
+
+============================================================
+24. LOGGING
+============================================================
+
+Create structured logging.
+
+Log:
+
+request ID
+dataset ID
+processing stage
+execution time
+row counts
+errors
+model status
+
+Never log:
+
+API keys
+passwords
+OAuth secrets
+Supabase secret key
+Gemini API key
+
+============================================================
+25. LARGE DATASET DESIGN
+============================================================
+
+The application must support millions of records.
+
+Use:
+
+DuckDB
+PyArrow
+Parquet
+SQL
+Chunk processing
+
+Avoid:
+
+large Python lists
+large Python dictionaries
+full CSV pandas loads
+in-memory candidate indexes
+
+Intermediate data should be disk-backed where practical.
+
+The design must be compatible with Google Colab for
+large-scale ML training.
+
+============================================================
+26. ML TRAINING ARCHITECTURE
+============================================================
+
+Separate:
+
+Training
+
+from:
+
+Production inference.
+
+Training:
+
+ml/training/
+
+Inference:
+
+backend/app/ml/
+
+Models:
+
+ml/models/
+
+Evaluation:
+
+ml/evaluation/
+
+Google Colab can execute:
+
+ml/training/
+
+The trained model artifacts can then be used by the backend
+inference services.
+
+============================================================
+27. LOCAL DEVELOPMENT COMMANDS
+============================================================
+
+Create environment:
+
+conda create -n inventory-ai python=3.10.13 -y
+
+Activate:
+
+conda activate inventory-ai
+
+Backend:
+
+cd backend
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+
+Frontend:
+
+cd frontend
+npm install
+npm run dev
+
+Backend:
+
+http://localhost:8000
+
+Frontend:
+
+http://localhost:3000
+
+Health:
+
+http://localhost:8000/health
+
+============================================================
+28. DOCKER
+============================================================
+
+Create a basic docker-compose.yml for:
+
+frontend
+backend
+
+Docker is optional for local development.
+
+The Conda + Node workflow must work without Docker.
+
+============================================================
+29. DOCUMENTATION
+============================================================
+
+Create:
+
+docs/architecture.md
+
+Explain:
+
+Frontend
+Backend
+Database
+ML
+Agents
+Data pipeline
+
+Create:
+
+docs/agent-workflow.md
+
+Explain:
+
+AI Copilot
+Supervisor
+Data Agent
+Risk Agent
+Forecast & Optimization Agent
+
+Create:
+
+docs/data-contract.md
+
+Explain canonical inventory data structures.
+
+Create:
+
+docs/setup.md
+
+Explain complete installation.
+
+============================================================
+30. TEST FOUNDATION
+============================================================
+
+Create tests for:
+
+Health endpoint
+Configuration loading
+Database connection
+Basic authentication middleware
+Basic API authorization
+Data profiling
+Agent tool interfaces
+
+Do not create fake passing tests that do not test actual
+behavior.
+
+============================================================
+31. OBSERVABILITY FOUNDATION
+============================================================
+
+Structure the application so that later it can support:
+
+- Request tracing
+- Agent execution tracing
+- Processing job status
+- ML inference metrics
+- Dataset processing metrics
+- Error tracking
+
+Every long-running dataset processing operation should have
+a processing/job ID.
+
+============================================================
+32. INDUSTRY-LEVEL DESIGN PRINCIPLES
+============================================================
+
+Follow:
+
+Separation of concerns
+Modular architecture
+Typed interfaces
+Configuration through environment variables
+API-first backend
+Database abstraction
+Repository/service pattern
+Async job-ready architecture
+Large-data processing
+Model versioning readiness
+Auditability
+Explainability
+Security
+Testability
+Observability
+
+Avoid:
+
+monolithic Python files
+hardcoded data
+hardcoded API keys
+frontend business logic
+LLM-generated numerical decisions
+full-data in-memory processing
+tight coupling between agents and database
+
+============================================================
+33. INITIAL IMPLEMENTATION
+============================================================
+
+After creating the complete project structure:
+
+1. Verify Python 3.10.13.
+2. Verify Conda environment.
+3. Install backend dependencies.
+4. Verify FastAPI.
+5. Create /health endpoint.
+6. Verify Next.js.
+7. Verify frontend starts.
+8. Verify environment configuration.
+9. Verify Supabase configuration can be loaded.
+10. Verify Gemini configuration exists without exposing
+    the key.
+11. Verify all directories exist.
+12. Verify README instructions.
+13. Verify .gitignore.
+14. Verify tests run.
+
+Do NOT start implementing the complete business logic until
+the foundation passes these checks.
+
+============================================================
+34. FINAL ARCHITECTURE
+============================================================
+
+The final system should conceptually become:
+
+                         USER
+                           |
+                           v
+                    NEXT.JS FRONTEND
+                           |
+                           v
+                     FASTAPI BACKEND
+                           |
+                           v
+                  AI COPILOT / GEMINI
+                           |
+                           v
+                    SUPERVISOR AGENT
+                           |
+             +-------------+-------------+
+             |             |             |
+             v             v             v
+        DATA AGENT     RISK AGENT    FORECAST &
+                                      OPTIMIZATION
+                                         AGENT
+             |             |             |
+             +-------------+-------------+
+                           |
+                           v
+                     TOOL LAYER
+                           |
+          +----------------+----------------+
+          |                |                |
+          v                v                v
+       DuckDB             ML          Optimization
+      /PyArrow         LightGBM       /Rules Engine
+          |                |                |
+          +----------------+----------------+
+                           |
+                           v
+                       SUPABASE
+                           |
+                           v
+                      DASHBOARD
+                           |
+                           v
+                  HUMAN APPROVAL
+                           |
+                           v
+                    AUDIT / ACTIONS
+
+============================================================
+END OF MASTER PROJECT SETUP
+============================================================
