@@ -24,6 +24,7 @@
 - [Overview & Problem Statement](#-overview--problem-statement)
 - [Visual Showcase](#-visual-showcase)
 - [System Architecture & Workflow](#-system-architecture--workflow)
+- [AI Agent Architecture (LangChain, LangGraph & Tools)](#-ai-agent-architecture-langchain-langgraph--tool-augmented-reasoning)
 - [Key Features](#-key-features)
 - [Technology Stack](#-technology-stack)
 - [Project Directory Structure](#-project-directory-structure)
@@ -131,6 +132,73 @@ flowchart TD
 
 ---
 
+## 🤖 AI Agent Architecture (LangChain, LangGraph & Tool-Augmented Reasoning)
+
+DarkStore.AI integrates a multi-agent analytical workflow designed for high-throughput quick-commerce decisioning. The agent ecosystem is built with **LangChain**, **LangGraph**, and **Google Gemini 1.5**, structured around deterministic tool execution:
+
+```
+                      ┌──────────────────────────────────────────────┐
+                      │    Operator Natural Language Query           │
+                      │  "What should I order today?" / "Coke stock" │
+                      └──────────────────────┬───────────────────────┘
+                                             │
+                                             ▼
+                      ┌──────────────────────────────────────────────┐
+                      │          Supervisor Agent / Router           │
+                      │  (Intent Classification & Tool Selection)    │
+                      └──────────────────────┬───────────────────────┘
+                                             │
+       ┌────────────────────────┬────────────┴────────────┬────────────────────────┐
+       ▼                        ▼                         ▼                        ▼
+┌──────────────┐       ┌─────────────────┐       ┌─────────────────┐      ┌─────────────────┐
+│ search_      │       │ get_inventory_  │       │ get_replenish_  │      │ get_stockout_   │
+│ product()    │       │ summary()       │       │ recommendations │      │ risk()          │
+└──────┬───────┘       └────────┬────────┘       └────────┬────────┘      └────────┬────────┘
+       │                        │                         │                        │
+       └────────────────────────┼─────────────────────────┴────────────────────────┘
+                                │
+                                ▼
+                      ┌──────────────────────────────────────────────┐
+                      │      Deterministic OLAP Execution            │
+                      │  (DuckDB + PyArrow Columnar Repositories)    │
+                      └──────────────────────┬───────────────────────┘
+                                             │ [Verified Numerical Payload]
+                                             ▼
+                      ┌──────────────────────────────────────────────┐
+                      │   Google Gemini 1.5 Synthesis & Reasoning    │
+                      │   (Strict Zero-Hallucination System Prompt)  │
+                      └──────────────────────┬───────────────────────┘
+                                             │
+                                             ▼
+                      ┌──────────────────────────────────────────────┐
+                      │  Actionable Answer + 1-Click PO Dispatch     │
+                      └──────────────────────────────────────────────┘
+```
+
+### 1. Modular Tool Registry (`backend/app/agents/tools.py`)
+The agent interacts with the dark-store environment exclusively through 9 deterministic Python analytical tools:
+- `search_product_tool`: Fuzzy and exact SKU/product name search over catalog memory.
+- `get_inventory_summary_tool`: Macro overview (out-of-stock counts, low stock counts, catalog health).
+- `get_inventory_tool`: Granular on-hand and available unit quantities for individual or all SKUs.
+- `get_replenishment_recommendations_tool`: Math-verified PO quantities factoring in lead time and MOQ.
+- `get_stockout_risk_tool`: Estimated hours until stock depletion based on LightGBM velocity.
+- `get_anomalies_tool`: Phantom inventory discrepancies flagged by Isolation Forest models.
+- `get_product_details_tool`: Deep-dive SKU telemetry, supplier terms, and reorder economics.
+- `get_action_queue_tool`: Urgency-ranked operational actions queue (Critical, High, Medium, Low).
+- `get_data_quality_tool`: Ingestion mapping confidence scores and missing feature diagnostics.
+
+### 2. Zero-Hallucination Design Pattern
+Quick-commerce operators cannot afford generative hallucinations on purchasing decisions. DarkStore.AI enforces a strict separation of concerns:
+- **Calculation Layer (Deterministic)**: DuckDB, LightGBM, and mathematical Poisson algorithms perform all aggregations, forecasts, and reorder math.
+- **Reasoning Layer (LLM)**: Gemini consumes the structured tool outputs and translates them into concise, natural-language executive briefs with action links.
+
+### 3. LangGraph & LangChain Multi-Agent Compatibility
+- **LangChain / LangGraph Dependencies**: Configured in `backend/requirements.txt` (`langchain>=0.1.13`, `langgraph>=0.0.30`, `langchain-google-genai>=1.0.1`) and `environment.yml`.
+- **StateGraph Ready**: The tool registry is decoupled from the LLM harness, allowing seamless binding into LangGraph `StateGraph` workflows with conditional edges, human-in-the-loop review nodes, and session persistence.
+- **Low-Latency Runtime**: The default production service (`GeminiCopilotService`) executes direct tool dispatch to achieve sub-500ms responses for time-sensitive dark-store managers.
+
+---
+
 ## ✨ Key Features
 
 - **Universal Schema Parser**: Ingest arbitrary CSV, Excel, or Parquet datasets without requiring predefined column schemas.
@@ -156,7 +224,8 @@ flowchart TD
 | **Analytical Engine** | **DuckDB + PyArrow** | Embedded OLAP columnar analytical database |
 | **Data Processing** | **Pandas + NumPy + SciPy** | Scientific computation and Poisson distribution |
 | **Machine Learning** | **LightGBM + Scikit-learn** | Quantile gradient boosting and Isolation Forest |
-| **AI / Large Language Model** | **Google Gemini 1.5** | Natural language reasoning over real-time tools |
+| **AI Agent Orchestration** | **LangChain + LangGraph** | Multi-agent state graphs, tool bindings, and workflows |
+| **Large Language Model** | **Google Gemini 1.5** | Natural language reasoning over real-time tools |
 | **Database & Auth** | **Supabase (PostgreSQL)** | RLS security policies, relational persistence, auth |
 | **Environment Management** | **Conda / Python 3.10** | Reproducible cross-platform ML runtime |
 
