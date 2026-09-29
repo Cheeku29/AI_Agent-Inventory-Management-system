@@ -6,13 +6,26 @@ import Link from "next/link";
 import { Boxes, Sparkles, ArrowRight, ShieldCheck, Mail, Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { ThreeVisual } from "@/components/ui/ThreeVisual";
+import { useGsapContext, getGSAP } from "@/lib/gsap";
 
 export default function LoginPage() {
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  useGsapContext((ctx) => {
+    const { gsap } = getGSAP();
+    gsap.from(".login-box", {
+      opacity: 0,
+      y: 20,
+      scale: 0.98,
+      duration: 0.45,
+      ease: "power2.out",
+    });
+  }, containerRef);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -90,7 +103,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100 flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden">
+    <div ref={containerRef} className="min-h-screen bg-[#0f172a] text-slate-100 flex flex-col justify-center items-center px-4 py-12 relative overflow-hidden">
       {/* Subtle ThreeUI Mesh Background */}
       <div className="absolute inset-0 opacity-25 pointer-events-none">
         <ThreeVisual variant="neural" height={800} />
@@ -114,7 +127,7 @@ export default function LoginPage() {
         </div>
 
         {/* Auth Card */}
-        <div className="bg-[#1e293b] border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5">
+        <div className="login-box bg-[#1e293b] border border-slate-700/80 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-5">
           {errorMsg && (
             <div className="p-3.5 rounded-lg bg-red-950/60 border border-red-800 text-xs text-red-200 space-y-2">
               <p className="leading-relaxed">{errorMsg}</p>

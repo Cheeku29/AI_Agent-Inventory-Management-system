@@ -37,10 +37,20 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/EmptyState";
+import { useGsapContext, getGSAP } from "@/lib/gsap";
 
 const RISK_COLORS = ["#dc2626", "#ea580c", "#d97706", "#059669"];
 
 export default function OverviewDashboardPage() {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  // Subtle dashboard entrance animation (Priority: Productivity)
+  useGsapContext((ctx) => {
+    const { gsap } = getGSAP();
+    gsap.from(".dash-header", { opacity: 0, y: -10, duration: 0.35, ease: "power2.out" });
+    gsap.from(".kpi-stat-card", { opacity: 0, y: 15, duration: 0.4, stagger: 0.06, ease: "power2.out" });
+    gsap.from(".dash-chart-section", { opacity: 0, y: 15, duration: 0.45, delay: 0.15, ease: "power2.out" });
+  }, containerRef, [containerRef]);
   const [activeDatasetId, setActiveDatasetId] = useState<string>("");
   const [activeDatasetName, setActiveDatasetName] = useState<string>("");
   const [inventoryData, setInventoryData] = useState<any>({ items: [], total_skus: 0, total_inventory_value: 0 });
@@ -160,85 +170,95 @@ export default function OverviewDashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div ref={containerRef} className="space-y-6">
       {/* Header */}
-      <PageHeader
-        title="Inventory Decision Dashboard"
-        description={`Real-time quick-commerce operations, stock health, and replenishment intelligence for ${activeDatasetName || "Active Facility"}.`}
-        badge={
-          <Badge variant="info" size="md">
-            Live Facility
-          </Badge>
-        }
-        actions={
-          <>
-            <Link href={`/datasets/${activeDatasetId}/recommendations`}>
-              <Button
-                variant="primary"
-                leftIcon={<ShoppingCart className="h-4 w-4" />}
-                rightIcon={<ArrowRight className="h-4 w-4" />}
-              >
-                Review Reorders ({pendingOrders})
-              </Button>
-            </Link>
-            <Link href="/copilot">
-              <Button
-                variant="secondary"
-                leftIcon={<Bot className="h-4 w-4 text-blue-600" />}
-              >
-                Ask Copilot
-              </Button>
-            </Link>
-          </>
-        }
-      />
-
-      {/* 4 KPI Cards (TasteSkill / 21st standards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Total Inventory"
-          value={(inventoryData.total_inventory_units || 0).toLocaleString()}
-          supportingText={`${inventoryData.total_skus || 0} active SKUs in catalog`}
-          trend={{ value: "Stable", isNeutral: true }}
-          icon={<Boxes className="h-4 w-4" />}
-        />
-
-        <StatCard
-          label="Inventory Valuation"
-          value={`$${(inventoryData.total_inventory_value || 0).toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}`}
-          supportingText="Active asset value"
-          trend={{ value: "+2.4% vs last cycle", isPositive: true }}
-          icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
-          variant="success"
-        />
-
-        <StatCard
-          label="Critical Depletions"
-          value={criticalStockouts}
-          supportingText="Stockouts projected in < 4h"
-          trend={{
-            value: criticalStockouts > 0 ? "Immediate Action" : "Healthy",
-            isPositive: criticalStockouts === 0,
-          }}
-          icon={<AlertTriangle className="h-4 w-4 text-red-600" />}
-          variant={criticalStockouts > 0 ? "critical" : "default"}
-        />
-
-        <StatCard
-          label="Pending Purchase Orders"
-          value={pendingOrders}
-          supportingText="Recommended for approval"
-          trend={{ value: `${recommendations.length} total SKUs evaluated`, isNeutral: true }}
-          icon={<ShoppingCart className="h-4 w-4 text-blue-600" />}
-          variant={pendingOrders > 0 ? "warning" : "default"}
+      <div className="dash-header">
+        <PageHeader
+          title="Inventory Decision Dashboard"
+          description={`Real-time quick-commerce operations, stock health, and replenishment intelligence for ${activeDatasetName || "Active Facility"}.`}
+          badge={
+            <Badge variant="info" size="md">
+              Live Facility
+            </Badge>
+          }
+          actions={
+            <>
+              <Link href={`/datasets/${activeDatasetId}/recommendations`}>
+                <Button
+                  variant="primary"
+                  leftIcon={<ShoppingCart className="h-4 w-4" />}
+                  rightIcon={<ArrowRight className="h-4 w-4" />}
+                >
+                  Review Reorders ({pendingOrders})
+                </Button>
+              </Link>
+              <Link href="/copilot">
+                <Button
+                  variant="secondary"
+                  leftIcon={<Bot className="h-4 w-4 text-blue-600" />}
+                >
+                  Ask Copilot
+                </Button>
+              </Link>
+            </>
+          }
         />
       </div>
 
+      {/* 4 KPI Cards (TasteSkill / 21st standards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="kpi-stat-card">
+          <StatCard
+            label="Total Inventory"
+            value={(inventoryData.total_inventory_units || 0).toLocaleString()}
+            supportingText={`${inventoryData.total_skus || 0} active SKUs in catalog`}
+            trend={{ value: "Stable", isNeutral: true }}
+            icon={<Boxes className="h-4 w-4" />}
+          />
+        </div>
+
+        <div className="kpi-stat-card">
+          <StatCard
+            label="Inventory Valuation"
+            value={`$${(inventoryData.total_inventory_value || 0).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}`}
+            supportingText="Active asset value"
+            trend={{ value: "+2.4% vs last cycle", isPositive: true }}
+            icon={<DollarSign className="h-4 w-4 text-emerald-600" />}
+            variant="success"
+          />
+        </div>
+
+        <div className="kpi-stat-card">
+          <StatCard
+            label="Critical Depletions"
+            value={criticalStockouts}
+            supportingText="Stockouts projected in < 4h"
+            trend={{
+              value: criticalStockouts > 0 ? "Immediate Action" : "Healthy",
+              isPositive: criticalStockouts === 0,
+            }}
+            icon={<AlertTriangle className="h-4 w-4 text-red-600" />}
+            variant={criticalStockouts > 0 ? "critical" : "default"}
+          />
+        </div>
+
+        <div className="kpi-stat-card">
+          <StatCard
+            label="Pending Purchase Orders"
+            value={pendingOrders}
+            supportingText="Recommended for approval"
+            trend={{ value: `${recommendations.length} total SKUs evaluated`, isNeutral: true }}
+            icon={<ShoppingCart className="h-4 w-4 text-blue-600" />}
+            variant={pendingOrders > 0 ? "warning" : "default"}
+          />
+        </div>
+      </div>
+
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="dash-chart-section grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Bar Chart: Top Replenishments */}
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">

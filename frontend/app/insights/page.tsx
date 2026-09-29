@@ -22,8 +22,10 @@ import { Button } from "@/components/ui/Button";
 import { ThreeVisual } from "@/components/ui/ThreeVisual";
 import { Modal } from "@/components/ui/Modal";
 import { EmptyState, Skeleton } from "@/components/ui/EmptyState";
+import { useGsapContext, getGSAP } from "@/lib/gsap";
 
 export default function AIInsightsPage() {
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const [activeDatasetId, setActiveDatasetId] = useState<string>("");
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [stockoutRisks, setStockoutRisks] = useState<any[]>([]);
@@ -32,6 +34,17 @@ export default function AIInsightsPage() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"recommendations" | "stockouts" | "anomalies">("recommendations");
   const [decisionNote, setDecisionNote] = useState<string>("");
+
+  useGsapContext((ctx) => {
+    const { gsap } = getGSAP();
+    gsap.from(".insight-rec-card", {
+      opacity: 0,
+      y: 15,
+      duration: 0.45,
+      stagger: 0.06,
+      ease: "power2.out",
+    });
+  }, containerRef, [activeTab, loading]);
 
   const loadData = (dsId: string) => {
     if (!dsId) {
@@ -81,7 +94,7 @@ export default function AIInsightsPage() {
   const criticalItems = recommendations.filter((r) => r.priority_level === "CRITICAL" && r.recommended_order > 0);
 
   return (
-    <div className="space-y-6">
+    <div ref={containerRef} className="space-y-6">
       {/* Top Banner with Subtle ThreeUI Ambient Visual */}
       <div className="relative rounded-2xl bg-gradient-to-r from-slate-900 via-slate-850 to-blue-950 text-white p-6 sm:p-8 overflow-hidden border border-slate-800 shadow-sm">
         {/* Subtle ThreeUI Mesh Canvas */}
@@ -188,7 +201,7 @@ export default function AIInsightsPage() {
               return (
                 <Card
                   key={rec.id || i}
-                  className={`p-5 flex flex-col justify-between transition-all ${
+                  className={`insight-rec-card p-5 flex flex-col justify-between transition-all ${
                     isCrit ? "border-red-200 bg-red-50/10" : ""
                   }`}
                 >
