@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from app.core.config import settings
 from app.core.logging import logger
 from app.core.exceptions import InventoryAIException
@@ -69,6 +69,11 @@ async def custom_exception_handler(request: Request, exc: InventoryAIException):
         status_code=exc.status_code,
         content={"detail": exc.detail, "error_code": exc.error_code}
     )
+
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="/docs")
 
 
 @app.api_route("/health", methods=["GET", "HEAD"], tags=["Health"])
